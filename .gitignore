@@ -1,0 +1,14 @@
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+env/
+venv/
+*.db
+*.sqlite3
+
+*.DS_Store
+*.env
+*.local
+*.sublime-project
+*.sublime-workspace

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #4CAF50;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+
+        #loading {
+            display: none;
+            font-size: 1.2em;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Currency Converter</h1>
+
+        <div>
+            <label for="currencies">Available Currencies:</label>
+            <select id="from_currency"></select>
+            <select id="to_currency"></select>
+        </div>
+
+        <input type="number" id="amount" placeholder="Amount" step="0.01">
+        <button onclick="convert()">Convert</button>
+        <h2 id="result"></h2>
+        <div id="loading">Loading...</div>
+    </div>
+
+    <script>
+        async function fetchCurrencies() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/currencies');
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                const currencies = await response.json();
+
+                const fromCurrencySelect = document.getElementById('from_currency');
+                const toCurrencySelect = document.getElementById('to_currency');
+
+                for (const [currency] of Object.entries(currencies)) {
+                    const optionFrom = new Option(currency, currency);
+                    const optionTo = new Option(currency, currency);
+                    fromCurrencySelect.add(optionFrom);
+                    toCurrencySelect.add(optionTo);
+                }
+            } catch (error) {
+                document.getElementById('result').innerText = 'Error fetching currencies: ' + error.message;
+            }
+        }
+
+        async function convert() {
+            const fromCurrency = document.getElementById('from_currency').value;
+            const toCurrency = document.getElementById('to_currency').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const loadingIndicator = document.getElementById('loading');
+
+            if (isNaN(amount) || amount <= 0) {
+                document.getElementById('result').innerText = 'Please enter a valid amount.';
+                return;
+            }
+
+            loadingIndicator.style.display = 'block';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/convert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        from_currency: fromCurrency,
+                        to_currency: toCurrency,
+                        amount: amount
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('result').innerText = `Converted amount: ${result.converted_amount} ${toCurrency}`;
+                } else {
+                    document.getElementById('result').innerText = result.detail;
+                }
+            } catch (error) {
+                document.getElementById('result').innerText = 'Error converting currency: ' + error.message;
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        window.onload = async () => {
+            await fetchCurrencies();
+        };
+    </script>
+</body>
+</html>
